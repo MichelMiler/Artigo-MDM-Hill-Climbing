@@ -1089,6 +1089,7 @@ approach <-function(shd_bool=FALSE){
       print(animation[[i]],renderer = gifski_renderer())
     }
   }
+  allglobal()
 }
 
 ##########################################################
