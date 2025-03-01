@@ -746,7 +746,7 @@ total_hill_cs_pf = setNames(melt(adj_matrix_hill_cs), c('Father', 'Child', 'Freq
 neuro_matrix_real = matrix(0,nrow=6,ncol=6)                                                                                            
 
 colnames(neuro_matrix_real)=rownames(neuro_matrix_real)=c('Child_PFE','Child_PFD','Child_TP',
-                                                          'Professor_PFE','Professor_PFD','Professor_TP')
+                                                          'Teacher_PFE','Teacher_PFD','Teacher_TP')
 
 sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
                      total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5")), 'Frequency'])                                                                                         
