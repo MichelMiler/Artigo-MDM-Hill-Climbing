@@ -659,355 +659,281 @@ duplas_agg = list(tail(duplas1,3000),
 duplas_agg_df = rbind(duplas_agg[[1]],duplas_agg[[2]],duplas_agg[[3]],duplas_agg[[4]],duplas_agg[[5]],duplas_agg[[6]],
                       duplas_agg[[7]],duplas_agg[[8]],duplas_agg[[9]],duplas_agg[[10]],duplas_agg[[11]],duplas_agg[[12]])  
 
-
+# Function to transform all local variables into global variables
 allglobal <- function() list2env(mget(ls(name = parent.frame()), envir = parent.frame()), envir = .GlobalEnv)
 
+# Function to choose the approach to estimate the DAG (Common-Structure and Individual
+# Structure)
+shd_bool = T
+typeof(shd_bool)!='logical'
 
 approach <-function(shd_bool=FALSE){
-  
-  if(shd_bool = TRUE){
-    
+  # If shd_bool = TRUE; you estimate the two approach and the shd, else just estimate
+  # the Common structure approach
+  if (typeof(shd_bool)!='logical'){
+    stop("Just allowed TRUE or FALSE")
   }
-}
-
-#------------------------------------------------------------------------------
-# MDM-Hill Climbing using individual structure
-#------------------------------------------------------------------------------
-
-adj_matrix_hills_is = list()
-time_hills = c()
-for (i in seq(1,12)){
-  print(i)
+  
+  #-------------------------------------------------------------------------------
+  # MDM-Hill Climbing using commum structure (CS)
+  #-------------------------------------------------------------------------------
   n_n=32
   start.time = Sys.time()
-  hill = hc(x = data.frame(duplas_agg[[i]]),score='custom',fun=mdm_score_bn,args=list(nbf=15,method='Brent',call=FALSE))
-  adj_matrix_hill = matrix(0,nrow=n_n,ncol=n_n,dimnames=list(colnames(duplas_agg[[i]]),colnames(duplas_agg[[i]])))
+  hill = hc(x = data.frame(duplas_agg_df),score='custom',fun=mdm_score_bn,args=list(nbf=15,method='Brent',call=FALSE))
+  adj_matrix_hill_cs = matrix(0,nrow=n_n,ncol=n_n,dimnames=list(colnames(duplas_agg_df),colnames(duplas_agg_df)))
   if (length(hill$arcs)!=0){
     for (z in seq(length(hill$arcs)/2)){
-      adj_matrix_hill[hill$arcs[z],hill$arcs[z+length(hill$arcs)/2]]=1
+      adj_matrix_hill_cs[hill$arcs[z],hill$arcs[z+length(hill$arcs)/2]]=1
     }
   }
+  
   end.time = Sys.time()
-  time_hills[i] = difftime(end.time, start.time, units = "secs")
-  adj_matrix_hills_is[[i]] = adj_matrix_hill
-}
-
-
-for(i in seq(1,12)){
-  dimnames(adj_matrix_hills_is[[i]]) = list(varnames,varnames)
+  time_hill = difftime(end.time, start.time, units = "secs")
+  #save.image("C:/Users/Michel/Documents/Estatística/TCC/temp.RData")
   
-}
-
-
-total_matrix_hills_is =  adj_matrix_hills_is[[1]]
-for(i in seq(2,12)){
-  total_matrix_hills_is =  total_matrix_hills_is + adj_matrix_hills_is[[i]]
-}
-
-total_hills_is_pf = setNames(melt(total_matrix_hills_is), c('Father', 'Child', 'Frequency'))
-
-con_matrix_hills_is<-0
-
-k = diag(rep(0,32))
-lower_ind = which(lower.tri(adj_matrix_hills_is[[1]]),arr.ind=T)
-upper_ind = t(combn(ncol(adj_matrix_hills_is[[1]]),2))
-
-for (i in seq(1,12)) {
-  con_matrix_hills_is <- con_matrix_hills_is + adj_matrix_hills_is[[i]][lower_ind] + adj_matrix_hills_is[[i]][upper_ind]
-}
-
-
-
-
-
-#-------------------------------------------------------------------------------
-# MDM-Hill Climbing using commum structure (CS)
-#-------------------------------------------------------------------------------
-n_n=32
-start.time = Sys.time()
-hill = hc(x = data.frame(duplas_agg_df),score='custom',fun=mdm_score_bn,args=list(nbf=15,method='Brent',call=FALSE))
-adj_matrix_hill_cs = matrix(0,nrow=n_n,ncol=n_n,dimnames=list(colnames(duplas_agg_df),colnames(duplas_agg_df)))
-if (length(hill$arcs)!=0){
-  for (z in seq(length(hill$arcs)/2)){
-    adj_matrix_hill_cs[hill$arcs[z],hill$arcs[z+length(hill$arcs)/2]]=1
+  dimnames(adj_matrix_hill_cs) = list(varnames,varnames)
+  
+  total_hill_cs_pf = setNames(melt(adj_matrix_hill_cs), c('Father', 'Child', 'Frequency'))
+  #-------------------------------------------------------------------------------
+  #Analysis inside the brain region individually.
+  #-------------------------------------------------------------------------------
+  neuro_matrix_real = matrix(0,nrow=6,ncol=6)                                                                                            
+  
+  colnames(neuro_matrix_real)=rownames(neuro_matrix_real)=c('Child_PFE','Child_PFD','Child_TP',
+                                                            'Teacher_PFE','Teacher_PFD','Teacher_TP')
+  
+  sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                          total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5")), 'Frequency'])                                                                                         
+  
+  sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5") & 
+                          total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency'])                                                                                                                                                                        
+  
+  sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
+                          total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11")),'Frequency'])                                                                                         
+  
+  sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11") & 
+                          total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency'] )    
+  
+  sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
+                          total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23")),'Frequency'])  
+  
+  sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23") & 
+                          total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency'])  
+  
+  
+  #----------------------------------------------------------------------------
+  # Analysis betwern regions of the same brain 
+  #----------------------------------------------------------------------------
+  
+  neuro_matrix_real[1,2] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                                                    total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11")),'Frequency']) 
+  
+  neuro_matrix_real[2,1] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                                                    total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11")),'Frequency']) 
+  
+  
+  neuro_matrix_real[1,3] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                                                    total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23")),'Frequency']) 
+  
+  neuro_matrix_real[3,1] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                                                    total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23")),'Frequency']) 
+  
+  
+  neuro_matrix_real[2,3] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
+                                                    total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23")),'Frequency']) 
+  
+  
+  neuro_matrix_real[3,2] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
+                                                    total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23")),'Frequency']) 
+  
+  
+  
+  
+  neuro_matrix_real[4,5] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5") & 
+                                                    total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency']) 
+  
+  neuro_matrix_real[5,4] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5") & 
+                                                    total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency']) 
+  
+  
+  neuro_matrix_real[4,6] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5") & 
+                                                    total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
+  
+  neuro_matrix_real[6,4] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5") & 
+                                                    total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
+  
+  
+  neuro_matrix_real[5,6] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11") & 
+                                                    total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
+  
+  
+  neuro_matrix_real[6,5] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11") & 
+                                                    total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
+  
+  
+  #---------------------------------------------------------------------
+  # Analysis of the connections between teacher and student brains
+  #---------------------------------------------------------------------
+  
+  
+  
+  neuro_matrix_real[1,4] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                                                    total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency'])  
+  
+  neuro_matrix_real[4,1] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                                                    total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency']) 
+  
+  
+  
+  neuro_matrix_real[1,5] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                                                    total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency'])  
+  
+  neuro_matrix_real[5,1] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                                                    total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency']) 
+  
+  
+  neuro_matrix_real[1,6] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                                                    total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency'])  
+  
+  neuro_matrix_real[6,1] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
+                                                    total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
+  
+  
+  
+  
+  
+  
+  neuro_matrix_real[2,4] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
+                                                    total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency'])  
+  
+  neuro_matrix_real[4,2] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
+                                                    total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency']) 
+  
+  
+  
+  neuro_matrix_real[2,5] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
+                                                    total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency'])  
+  
+  neuro_matrix_real[5,2] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
+                                                    total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency']) 
+  
+  
+  neuro_matrix_real[2,6] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
+                                                    total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency'])  
+  
+  neuro_matrix_real[6,2] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
+                                                    total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
+  
+  
+  
+  
+  
+  neuro_matrix_real[3,4] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
+                                                    total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency'])  
+  
+  neuro_matrix_real[4,3] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
+                                                    total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency']) 
+  
+  
+  
+  neuro_matrix_real[3,5] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
+                                                    total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency'])  
+  
+  neuro_matrix_real[5,3] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
+                                                    total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency']) 
+  
+  
+  neuro_matrix_real[3,6] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
+                                                    total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency'])  
+  
+  neuro_matrix_real[6,3] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
+                                                    total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
+  #-----------------------------------------------------------------------------------------
+  # Connectivity and strength graph
+  #-----------------------------------------------------------------------------------------
+  
+  my.lines<-data.frame(x=c(.5,16.5,16.5,16.5), y=c(16.5,0.5,16.5,16.5), 
+                       xend=c(16.5,16.5,32.5,16.5), yend=c(16.5,16.5,16.5,32.5))
+  
+  
+  my.vlines <- data.frame(
+    y = c(0.5,0.5, 0.5, 0.5,0.5),
+    x = c(4.5,8.5, 20.5,24.5,32.5),
+    yend = c(32.5,32.5, 32.5, 32.5, 32.5),
+    xend = c(4.5,8.5, 20.5,24.5,32.5)
+  )
+  
+  my.hlines <- data.frame(
+    x = c(0.5,0.5, 0.5, 0.5,0.5),
+    y = c(4.5,8.5, 20.5,24.5,32.5),
+    xend = c(32.5,32.5, 32.5, 32.5, 32.5),
+    yend = c(4.5,8.5, 20.5,24.5,32.5)
+  )
+  
+  
+  
+  # Your modified ggplot code
+  total_hill_cs_pf |>
+    mutate(
+      Frequency = if_else(round(Frequency) == 1, 1, 0)
+    ) |>
+    mutate(Father = factor(Father, levels = varnames),
+           Child = factor(Child, levels = varnames)) |>
+    ggplot(aes(y = Father, x = Child, fill = factor(Frequency))) +
+    geom_tile(color = "gray") +
+    theme_bw() +
+    scale_fill_manual(values = c("0" = "white", "1" = "red")) +
+    labs(y = "Parent node", x = "Child node", fill = NULL) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none") +
+    geom_segment(data = my.vlines, aes(x = x, y = y, xend = xend, yend = yend), linewidth = 1, inherit.aes = FALSE, linetype = 'dashed', color = 'orange') +
+    geom_segment(data = my.hlines, aes(x = x, y = y, xend = xend, yend = yend), linewidth = 1, inherit.aes = FALSE, linetype = 'dashed', color = 'orange')+
+    geom_segment(data=my.lines, aes(x,y,xend=xend, yend=yend), linewidth=1, inherit.aes=F,linetype='solid',color='black')
+  
+  all_betas_list_cs = list()
+  for (i in seq(1,12)){
+    df= CDELT(dts = duplas_agg[[i]], m_ad = adj_matrix_hill_cs)
+    filt = mdm_filt(
+      # Data input
+      dts = as.matrix(duplas_agg[[i]]),
+      # Adjacency matrix
+      # It's important that the adjacency matrix follows the order of the data input
+      m_ad = adj_matrix_hill_cs,
+      # Estimated discount factor
+      df$DF_hat)
+    
+    smoo=mdm_smoo(filt$mt, filt$Ct, filt$Rt, filt$nt, filt$dt)
+    
+    # Bind all parameters togheter
+    all_betas <- t(Reduce(x = smoo$smt, rbind))
+    all_betas_list_cs[[i]] = all_betas
+    
   }
-}
-
-end.time = Sys.time()
-time_hill = difftime(end.time, start.time, units = "secs")
-#save.image("C:/Users/Michel/Documents/Estatística/TCC/temp.RData")
-
-dimnames(adj_matrix_hill_cs) = list(varnames,varnames)
-
-total_hill_cs_pf = setNames(melt(adj_matrix_hill_cs), c('Father', 'Child', 'Frequency'))
-#-------------------------------------------------------------------------------
-#Analysis inside the brain region individually.
-#-------------------------------------------------------------------------------
-neuro_matrix_real = matrix(0,nrow=6,ncol=6)                                                                                            
-
-colnames(neuro_matrix_real)=rownames(neuro_matrix_real)=c('Child_PFE','Child_PFD','Child_TP',
-                                                          'Teacher_PFE','Teacher_PFD','Teacher_TP')
-
-sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                     total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5")), 'Frequency'])                                                                                         
-
-sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5") & 
-                     total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency'])                                                                                                                                                                        
-
-sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
-                     total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11")),'Frequency'])                                                                                         
-
-sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11") & 
-                     total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency'] )    
-
-sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
-                     total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23")),'Frequency'])  
-
-sum(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23") & 
-                     total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency'])  
-
-
-#----------------------------------------------------------------------------
-# Analysis betwern regions of the same brain 
-#----------------------------------------------------------------------------
-
-neuro_matrix_real[1,2] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                                               total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11")),'Frequency']) 
-
-neuro_matrix_real[2,1] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                                               total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11")),'Frequency']) 
-
-
-neuro_matrix_real[1,3] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                                               total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23")),'Frequency']) 
-
-neuro_matrix_real[3,1] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                                               total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23")),'Frequency']) 
-
-
-neuro_matrix_real[2,3] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
-                                               total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23")),'Frequency']) 
-
-
-neuro_matrix_real[3,2] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
-                                               total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23")),'Frequency']) 
-
-
-
-
-neuro_matrix_real[4,5] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5") & 
-                                               total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency']) 
-
-neuro_matrix_real[5,4] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5") & 
-                                               total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency']) 
-
-
-neuro_matrix_real[4,6] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5") & 
-                                               total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
-
-neuro_matrix_real[6,4] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5") & 
-                                               total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
-
-
-neuro_matrix_real[5,6] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11") & 
-                                               total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
-
-
-neuro_matrix_real[6,5] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11") & 
-                                               total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
-
-
-#---------------------------------------------------------------------
-# Analysis of the connections between teacher and student brains
-#---------------------------------------------------------------------
-
-
-
-neuro_matrix_real[1,4] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                                               total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency'])  
-
-neuro_matrix_real[4,1] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                                               total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency']) 
-
-
-
-neuro_matrix_real[1,5] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                                               total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency'])  
-
-neuro_matrix_real[5,1] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                                               total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency']) 
-
-
-neuro_matrix_real[1,6] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                                               total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency'])  
-
-neuro_matrix_real[6,1] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV1",  "SV2",  "SV4",  "SV5") & 
-                                               total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
-
-
-
-
-
-
-neuro_matrix_real[2,4] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
-                                               total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency'])  
-
-neuro_matrix_real[4,2] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
-                                               total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency']) 
-
-
-
-neuro_matrix_real[2,5] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
-                                               total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency'])  
-
-neuro_matrix_real[5,2] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
-                                               total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency']) 
-
-
-neuro_matrix_real[2,6] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
-                                               total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency'])  
-
-neuro_matrix_real[6,2] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV7",  "SV8",  "SV10",  "SV11") & 
-                                               total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
-
-
-
-
-
-neuro_matrix_real[3,4] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
-                                               total_hill_cs_pf$Child %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency'])  
-
-neuro_matrix_real[4,3] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
-                                               total_hill_cs_pf$Father %in% c("TV1",  "TV2",  "TV4",  "TV5")),'Frequency']) 
-
-
-
-neuro_matrix_real[3,5] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
-                                               total_hill_cs_pf$Child %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency'])  
-
-neuro_matrix_real[5,3] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
-                                               total_hill_cs_pf$Father %in% c("TV7",  "TV8",  "TV10",  "TV11")),'Frequency']) 
-
-
-neuro_matrix_real[3,6] = mean(total_hill_cs_pf[(total_hill_cs_pf$Father %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
-                                               total_hill_cs_pf$Child %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency'])  
-
-neuro_matrix_real[6,3] = mean(total_hill_cs_pf[(total_hill_cs_pf$Child %in% c("SV13",  "SV14",  "SV15",  "SV17","SV18","SV20","SV21","SV23") & 
-                                               total_hill_cs_pf$Father %in% c("TV13",  "TV14",  "TV15",  "TV17","TV18","TV20","TV21","TV23")),'Frequency']) 
-#-----------------------------------------------------------------------------------------
-# Connectivity and strength graph
-#-----------------------------------------------------------------------------------------
-
-my.lines<-data.frame(x=c(.5,16.5,16.5,16.5), y=c(16.5,0.5,16.5,16.5), 
-                     xend=c(16.5,16.5,32.5,16.5), yend=c(16.5,16.5,16.5,32.5))
-
-
-my.vlines <- data.frame(
-  y = c(0.5,0.5, 0.5, 0.5,0.5),
-  x = c(4.5,8.5, 20.5,24.5,32.5),
-  yend = c(32.5,32.5, 32.5, 32.5, 32.5),
-  xend = c(4.5,8.5, 20.5,24.5,32.5)
-)
-
-my.hlines <- data.frame(
-  x = c(0.5,0.5, 0.5, 0.5,0.5),
-  y = c(4.5,8.5, 20.5,24.5,32.5),
-  xend = c(32.5,32.5, 32.5, 32.5, 32.5),
-  yend = c(4.5,8.5, 20.5,24.5,32.5)
-)
-
-
-
-# Your modified ggplot code
-total_hill_cs_pf |>
-  mutate(
-    Frequency = if_else(round(Frequency) == 1, 1, 0)
-  ) |>
-  mutate(Father = factor(Father, levels = varnames),
-         Child = factor(Child, levels = varnames)) |>
-  ggplot(aes(y = Father, x = Child, fill = factor(Frequency))) +
-  geom_tile(color = "gray") +
-  theme_bw() +
-  scale_fill_manual(values = c("0" = "white", "1" = "red")) +
-  labs(y = "Parent node", x = "Child node", fill = NULL) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none") +
-  geom_segment(data = my.vlines, aes(x = x, y = y, xend = xend, yend = yend), linewidth = 1, inherit.aes = FALSE, linetype = 'dashed', color = 'orange') +
-  geom_segment(data = my.hlines, aes(x = x, y = y, xend = xend, yend = yend), linewidth = 1, inherit.aes = FALSE, linetype = 'dashed', color = 'orange')+
-  geom_segment(data=my.lines, aes(x,y,xend=xend, yend=yend), linewidth=1, inherit.aes=F,linetype='solid',color='black')
-
-
-
-
-#------------------------------------------------------------------------------------
-## SHD calculation
-
-lower_ind = which(lower.tri(adj_matrix_hill_cs),arr.ind=T)
-k = diag(rep(0,32))
-upper_ind = t(combn(ncol(k),2))
-con_matrix_hill_cs <- adj_matrix_hill_cs[lower_ind] + adj_matrix_hill_cs[upper_ind]
-k[lower_ind] = k[upper_ind] = con_matrix_hill_cs == 1
-
-tot_pos = length(con_matrix_hill_cs)
-
-shd = c()
-total_con = c()
-for (i in seq(1,12)){
-  con_matrix_hills_is <- adj_matrix_hills_is[[i]][lower.tri(adj_matrix_hills_is[[i]])] + t(adj_matrix_hills_is[[i]])[lower.tri(t(adj_matrix_hills_is[[i]]))]
-  acc_inverse = 1-mean(con_matrix_hills_is == con_matrix_hill_cs)
-  VP_ =  sum((t(adj_matrix_hill_cs)[lower.tri(t(adj_matrix_hill_cs))&(k==1)] == t(adj_matrix_hills_is[[i]])[lower.tri(t(adj_matrix_hills_is[[i]]))&(k==1)])&(adj_matrix_hill_cs[lower.tri(adj_matrix_hill_cs)&(k==1)] == adj_matrix_hills_is[[i]][lower.tri(adj_matrix_hills_is[[i]])&(k==1)]))
-  VP = sum(con_matrix_hills_is[con_matrix_hill_cs==1]==1)
-  shd[i] = acc_inverse + (VP-VP_)/tot_pos
-  total_con[i] = sum(con_matrix_hills_is)
-}
-
-
-
-
-#------------------------------------------------------------------------------------ 
-#IS-approach graph (12 dyads)
-#------------------------------------------------------------------------------------
-all_betas_list_is = list()
-for (i in seq(1,12)){
-  df= CDELT(dts = duplas_agg[[i]], m_ad = adj_matrix_hills_is[[i]])
-  filt = mdm_filt(
-    # Data input
-    dts = as.matrix(duplas_agg[[i]]),
-    # Adjacency matrix
-    # It's important that the adjacency matrix follows the order of the data input
-    m_ad = adj_matrix_hills_is[[i]],
-    # Estimated discount factor
-    df$DF_hat)
   
-  smoo = mdm_smoo(filt$mt, filt$Ct, filt$Rt, filt$nt, filt$dt)
   
-  # Bind all parameters togheter
-  all_betas <- t(Reduce(x = smoo$smt, rbind))
-  all_betas_list_is[[i]] = all_betas
+  all_betas_geral_cs = all_betas_list_cs[[1]]
   
-}
-
-
-# IS approach with smoothed parameter
-
-
-animation=list()
-for (i in seq(1,12)){
-  all_betas = all_betas_list_is[[i]]
-  fix_plot <- all_betas |> as_tibble() |> 
+  for (i in seq(2,12)){
+    all_betas_geral_cs = all_betas_geral_cs + all_betas_list_cs[[i]]
+  }
+  
+  all_betas_geral_cs = all_betas_geral_cs/12
+  
+  # CS aproach Graph
+  
+  fix_plot <- all_betas_geral_cs |> as_tibble() |> 
     select(contains("->")) |> mutate(id = 1:dim(all_betas)[1]) |>
     pivot_longer(cols = - id) |>
     tidyr::separate(col = name, into = c("Father", "Child"), sep = "->") |>
     mutate(
-      Father = factor(Father, levels = unique(total_hills_is_pf$Father)),
-      Child = factor(Child, levels = unique(total_hills_is_pf$Child))
+      Father = factor(Father, levels = unique(total_hill_cs_pf$Father)),
+      Child = factor(Child, levels = unique(total_hill_cs_pf$Child))
     ) |>
     ggplot(aes(y = Father, x = Child, fill = value)) +
     geom_tile() +
     scale_y_discrete(drop=FALSE) +
     scale_x_discrete(drop=FALSE) +
-    scale_fill_gradient2(limits = c(-3, 3))+
+    scale_fill_gradient2(limits = c(-7, 7))+
     #scale_fill_gradient2()+
-    #scale_fill_manual(values = c("0" = "gray90")) +
     #scale_fill_viridis_c() +  # You can change the color scale if you prefer
     labs(title = "Time Points: {frame_time}", x = "Child", y = "Father",
          fill = "Connectivity")+
@@ -1017,74 +943,159 @@ for (i in seq(1,12)){
     geom_segment(data=my.lines, aes(x,y,xend=xend, yend=yend), linewidth=1, inherit.aes=F,linetype='solid',color='black')
   #theme_bw()
   
-  animation[[i]] <- fix_plot +
+  animation_geral_cs <- fix_plot +
     transition_time(id) +
     ease_aes('linear'#, interval = 0.5
     )
-  print(animation[[i]],renderer = gifski_renderer())
+  print(animation_geral_cs,renderer = gifski_renderer())
+  
+  
+  
+  if(shd_bool == TRUE){
+    
+    #------------------------------------------------------------------------------
+    # MDM-Hill Climbing using individual structure
+    #------------------------------------------------------------------------------
+    
+    adj_matrix_hills_is = list()
+    time_hills = c()
+    for (i in seq(1,12)){
+      print(i)
+      n_n=32
+      start.time = Sys.time()
+      hill = hc(x = data.frame(duplas_agg[[i]]),score='custom',fun=mdm_score_bn,args=list(nbf=15,method='Brent',call=FALSE))
+      adj_matrix_hill = matrix(0,nrow=n_n,ncol=n_n,dimnames=list(colnames(duplas_agg[[i]]),colnames(duplas_agg[[i]])))
+      if (length(hill$arcs)!=0){
+        for (z in seq(length(hill$arcs)/2)){
+          adj_matrix_hill[hill$arcs[z],hill$arcs[z+length(hill$arcs)/2]]=1
+        }
+      }
+      end.time = Sys.time()
+      time_hills[i] = difftime(end.time, start.time, units = "secs")
+      adj_matrix_hills_is[[i]] = adj_matrix_hill
+    }
+    
+    
+    for(i in seq(1,12)){
+      dimnames(adj_matrix_hills_is[[i]]) = list(varnames,varnames)
+      
+    }
+    
+    
+    total_matrix_hills_is =  adj_matrix_hills_is[[1]]
+    for(i in seq(2,12)){
+      total_matrix_hills_is =  total_matrix_hills_is + adj_matrix_hills_is[[i]]
+    }
+    
+    total_hills_is_pf = setNames(melt(total_matrix_hills_is), c('Father', 'Child', 'Frequency'))
+    
+    con_matrix_hills_is<-0
+    
+    k = diag(rep(0,32))
+    lower_ind = which(lower.tri(adj_matrix_hills_is[[1]]),arr.ind=T)
+    upper_ind = t(combn(ncol(adj_matrix_hills_is[[1]]),2))
+    
+    for (i in seq(1,12)) {
+      con_matrix_hills_is <- con_matrix_hills_is + adj_matrix_hills_is[[i]][lower_ind] + adj_matrix_hills_is[[i]][upper_ind]
+    }
+    
+    
+    
+    
+    
+    #------------------------------------------------------------------------------------
+    ## SHD calculation
+    
+    lower_ind = which(lower.tri(adj_matrix_hill_cs),arr.ind=T)
+    k = diag(rep(0,32))
+    upper_ind = t(combn(ncol(k),2))
+    con_matrix_hill_cs <- adj_matrix_hill_cs[lower_ind] + adj_matrix_hill_cs[upper_ind]
+    k[lower_ind] = k[upper_ind] = con_matrix_hill_cs == 1
+    
+    tot_pos = length(con_matrix_hill_cs)
+    
+    shd = c()
+    total_con = c()
+    for (i in seq(1,12)){
+      con_matrix_hills_is <- adj_matrix_hills_is[[i]][lower.tri(adj_matrix_hills_is[[i]])] + t(adj_matrix_hills_is[[i]])[lower.tri(t(adj_matrix_hills_is[[i]]))]
+      acc_inverse = 1-mean(con_matrix_hills_is == con_matrix_hill_cs)
+      VP_ =  sum((t(adj_matrix_hill_cs)[lower.tri(t(adj_matrix_hill_cs))&(k==1)] == t(adj_matrix_hills_is[[i]])[lower.tri(t(adj_matrix_hills_is[[i]]))&(k==1)])&(adj_matrix_hill_cs[lower.tri(adj_matrix_hill_cs)&(k==1)] == adj_matrix_hills_is[[i]][lower.tri(adj_matrix_hills_is[[i]])&(k==1)]))
+      VP = sum(con_matrix_hills_is[con_matrix_hill_cs==1]==1)
+      shd[i] = acc_inverse + (VP-VP_)/tot_pos
+      total_con[i] = sum(con_matrix_hills_is)
+    }
+    
+    
+    
+    
+    #------------------------------------------------------------------------------------ 
+    #IS-approach graph (12 dyads)
+    #------------------------------------------------------------------------------------
+    all_betas_list_is = list()
+    for (i in seq(1,12)){
+      df= CDELT(dts = duplas_agg[[i]], m_ad = adj_matrix_hills_is[[i]])
+      filt = mdm_filt(
+        # Data input
+        dts = as.matrix(duplas_agg[[i]]),
+        # Adjacency matrix
+        # It's important that the adjacency matrix follows the order of the data input
+        m_ad = adj_matrix_hills_is[[i]],
+        # Estimated discount factor
+        df$DF_hat)
+      
+      smoo = mdm_smoo(filt$mt, filt$Ct, filt$Rt, filt$nt, filt$dt)
+      
+      # Bind all parameters togheter
+      all_betas <- t(Reduce(x = smoo$smt, rbind))
+      all_betas_list_is[[i]] = all_betas
+      
+    }
+    
+    
+    # IS approach with smoothed parameter
+    
+    
+    animation=list()
+    for (i in seq(1,12)){
+      all_betas = all_betas_list_is[[i]]
+      fix_plot <- all_betas |> as_tibble() |> 
+        select(contains("->")) |> mutate(id = 1:dim(all_betas)[1]) |>
+        pivot_longer(cols = - id) |>
+        tidyr::separate(col = name, into = c("Father", "Child"), sep = "->") |>
+        mutate(
+          Father = factor(Father, levels = unique(total_hills_is_pf$Father)),
+          Child = factor(Child, levels = unique(total_hills_is_pf$Child))
+        ) |>
+        ggplot(aes(y = Father, x = Child, fill = value)) +
+        geom_tile() +
+        scale_y_discrete(drop=FALSE) +
+        scale_x_discrete(drop=FALSE) +
+        scale_fill_gradient2(limits = c(-3, 3))+
+        #scale_fill_gradient2()+
+        #scale_fill_manual(values = c("0" = "gray90")) +
+        #scale_fill_viridis_c() +  # You can change the color scale if you prefer
+        labs(title = "Time Points: {frame_time}", x = "Child", y = "Father",
+             fill = "Connectivity")+
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+        geom_segment(data = my.vlines, aes(x = x, y = y, xend = xend, yend = yend), linewidth = 1, inherit.aes = FALSE, linetype = 'dashed', color = 'orange') +
+        geom_segment(data = my.hlines, aes(x = x, y = y, xend = xend, yend = yend), linewidth = 1, inherit.aes = FALSE, linetype = 'dashed', color = 'orange')+
+        geom_segment(data=my.lines, aes(x,y,xend=xend, yend=yend), linewidth=1, inherit.aes=F,linetype='solid',color='black')
+      #theme_bw()
+      
+      animation[[i]] <- fix_plot +
+        transition_time(id) +
+        ease_aes('linear'#, interval = 0.5
+        )
+      print(animation[[i]],renderer = gifski_renderer())
+    }
+  }
 }
 
-
-#----------------------------------------------------------------------------------
-# CS approach
-#---------------------------------------------------------------------------------
-all_betas_list_cs = list()
-for (i in seq(1,12)){
-  df= CDELT(dts = duplas_agg[[i]], m_ad = adj_matrix_hill_cs)
-  filt = mdm_filt(
-    # Data input
-    dts = as.matrix(duplas_agg[[i]]),
-    # Adjacency matrix
-    # It's important that the adjacency matrix follows the order of the data input
-    m_ad = adj_matrix_hill_cs,
-    # Estimated discount factor
-    df$DF_hat)
-  
-  smoo=mdm_smoo(filt$mt, filt$Ct, filt$Rt, filt$nt, filt$dt)
-  
-  # Bind all parameters togheter
-  all_betas <- t(Reduce(x = smoo$smt, rbind))
-  all_betas_list_cs[[i]] = all_betas
-  
-}
-
-
-all_betas_geral_cs = all_betas_list_cs[[1]]
-
-for (i in seq(2,12)){
-  all_betas_geral_cs = all_betas_geral_cs + all_betas_list_cs[[i]]
-}
-
-all_betas_geral_cs = all_betas_geral_cs/12
-
-
-fix_plot <- all_betas_geral_cs |> as_tibble() |> 
-  select(contains("->")) |> mutate(id = 1:dim(all_betas)[1]) |>
-  pivot_longer(cols = - id) |>
-  tidyr::separate(col = name, into = c("Father", "Child"), sep = "->") |>
-  mutate(
-    Father = factor(Father, levels = unique(total_hill_cs_pf$Father)),
-    Child = factor(Child, levels = unique(total_hill_cs_pf$Child))
-  ) |>
-  ggplot(aes(y = Father, x = Child, fill = value)) +
-  geom_tile() +
-  scale_y_discrete(drop=FALSE) +
-  scale_x_discrete(drop=FALSE) +
-  scale_fill_gradient2(limits = c(-7, 7))+
-  #scale_fill_gradient2()+
-  #scale_fill_viridis_c() +  # You can change the color scale if you prefer
-  labs(title = "Time Points: {frame_time}", x = "Child", y = "Father",
-       fill = "Connectivity")+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  geom_segment(data = my.vlines, aes(x = x, y = y, xend = xend, yend = yend), linewidth = 1, inherit.aes = FALSE, linetype = 'dashed', color = 'orange') +
-  geom_segment(data = my.hlines, aes(x = x, y = y, xend = xend, yend = yend), linewidth = 1, inherit.aes = FALSE, linetype = 'dashed', color = 'orange')+
-  geom_segment(data=my.lines, aes(x,y,xend=xend, yend=yend), linewidth=1, inherit.aes=F,linetype='solid',color='black')
-#theme_bw()
-
-animation_geral_cs <- fix_plot +
-  transition_time(id) +
-  ease_aes('linear'#, interval = 0.5
-  )
-print(animation_geral_cs,renderer = gifski_renderer())
-
-
+##########################################################
+# Call the function "approach" to start the estimation
+# The function "approach" has one boolean argument "shd_bool"
+# Insert TRUE, if you want to estimate the individual and common approach, as well as the shd.
+# Example: approach(shd_bool = TRUE)
+# Insert FALSE, if you want to just estimate the common approach. 
+# Example: approach() or approach(shd_bool = FALSE)
+##########################################################
