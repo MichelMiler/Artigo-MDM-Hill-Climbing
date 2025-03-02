@@ -382,17 +382,18 @@ k[lower_ind] = k[upper_ind] = con_matrix_hill_cs == 1
 
 tot_pos = length(con_matrix_hill_cs)
 
-shd = c()
+shd_calc = c()
 total_con = c()
 for (i in seq(1,12)){
   con_matrix_hills_is <- adj_matrix_hills_is[[i]][lower.tri(adj_matrix_hills_is[[i]])] + t(adj_matrix_hills_is[[i]])[lower.tri(t(adj_matrix_hills_is[[i]]))]
   acc_inverse = 1-mean(con_matrix_hills_is == con_matrix_hill_cs)
   VP_ =  sum((t(adj_matrix_hill_cs)[lower.tri(t(adj_matrix_hill_cs))&(k==1)] == t(adj_matrix_hills_is[[i]])[lower.tri(t(adj_matrix_hills_is[[i]]))&(k==1)])&(adj_matrix_hill_cs[lower.tri(adj_matrix_hill_cs)&(k==1)] == adj_matrix_hills_is[[i]][lower.tri(adj_matrix_hills_is[[i]])&(k==1)]))
   VP = sum(con_matrix_hills_is[con_matrix_hill_cs==1]==1)
-  shd[i] = acc_inverse + (VP-VP_)/tot_pos
+  shd_calc[i] = acc_inverse + (VP-VP_)/tot_pos
   total_con[i] = sum(con_matrix_hills_is)
 }
 
+print(shd_calc)
 
 #----------------------------------------------------------------------------------
 # CS approach graph
