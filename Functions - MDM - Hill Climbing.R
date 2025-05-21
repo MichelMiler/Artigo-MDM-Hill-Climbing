@@ -532,7 +532,7 @@ CDELT <- function(dts,m_ad,nbf=15,method='Brent',call=FALSE) {
 }
 
 #################################################################################
-# Score of MDM for bnlearn package
+# Score of MDM (LPL) for bnlearn package
 #################################################################################
 
 mdm_score_bn <- function(node, parents, data, args) {
